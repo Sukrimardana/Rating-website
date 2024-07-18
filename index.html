@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rating Website</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 300px;
+        }
+
+        .rating {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .star {
+            font-size: 30px;
+            cursor: pointer;
+            color: gray;
+        }
+
+        .star.selected {
+            color: gold;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        input, textarea {
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        button {
+            padding: 10px;
+            background-color: #5cb85c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #4cae4c;
+        }
+
+        #feedback {
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .feedback-item {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            transition: transform 0.3s, background-color 0.3s;
+        }
+
+        .feedback-item:hover {
+            transform: scale(1.05);
+            background-color: #d4edda;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Rating Website</h1>
+        <div id="feedback"></div>
+        <div class="rating">
+            <span class="star" data-value="1">&#9733;</span>
+            <span class="star" data-value="2">&#9733;</span>
+            <span class="star" data-value="3">&#9733;</span>
+            <span class="star" data-value="4">&#9733;</span>
+            <span class="star" data-value="5">&#9733;</span>
+        </div>
+        <form id="ratingForm">
+            <input type="text" id="name" placeholder="Nama Anda" required>
+            <textarea id="message" placeholder="Pesan Anda" required></textarea>
+            <input type="hidden" id="rating" name="rating" value="0">
+            <button type="submit">Kirim</button>
+        </form>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const stars = document.querySelectorAll('.star');
+            const ratingInput = document.getElementById('rating');
+            let selectedRating = 0;
+
+            // Load feedback from localStorage
+            const feedback = document.getElementById('feedback');
+            const storedFeedback = JSON.parse(localStorage.getItem('feedback')) || [];
+            storedFeedback.forEach(item => {
+                const feedbackItem = document.createElement('div');
+                feedbackItem.classList.add('feedback-item');
+                feedbackItem.innerHTML = `<strong>${item.name}</strong> memberi rating <strong>${item.rating}</strong> bintang<br>${item.message}`;
+                feedback.appendChild(feedbackItem);
+            });
+
+            // Load saved form data from localStorage
+            const savedName = localStorage.getItem('name');
+            const savedMessage = localStorage.getItem('message');
+            const savedRating = localStorage.getItem('rating');
+
+            if (savedName) document.getElementById('name').value = savedName;
+            if (savedMessage) document.getElementById('message').value = savedMessage;
+            if (savedRating) {
+                ratingInput.value = savedRating;
+                selectedRating = savedRating;
+                stars.forEach(star => {
+                    if (star.getAttribute('data-value') <= savedRating) {
+                        star.classList.add('selected');
+                    }
+                });
+            }
+
+            stars.forEach(star => {
+                star.addEventListener('click', () => {
+                    selectedRating = star.getAttribute('data-value');
+                    ratingInput.value = selectedRating;
+                    stars.forEach(s => s.classList.remove('selected'));
+                    star.classList.add('selected');
+                    let prevStar = star.previousElementSibling;
+                    while (prevStar) {
+                        prevStar.classList.add('selected');
+                        prevStar = prevStar.previousElementSibling;
+                    }
+                });
+
+                star.addEventListener('mouseover', () => {
+                    stars.forEach(s => s.classList.remove('hover'));
+                    star.classList.add('hover');
+                    let prevStar = star.previousElementSibling;
+                    while (prevStar) {
+                        prevStar.classList.add('hover');
+                        prevStar = prevStar.previousElementSibling;
+                    }
+                });
+
+                star.addEventListener('mouseout', () => {
+                    stars.forEach(s => s.classList.remove('hover'));
+                });
+            });
+
+            const form = document.getElementById('ratingForm');
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const name = document.getElementById('name').value;
+                const message = document.getElementById('message').value;
+                const rating = ratingInput.value;
+
+                if (rating === '0') {
+                    alert('Silakan pilih rating terlebih dahulu.');
+                    return;
+                }
+
+                const feedbackItem = document.createElement('div');
+                feedbackItem.classList.add('feedback-item');
+                feedbackItem.innerHTML = `<strong>${name}</strong> memberi rating <strong>${rating}</strong> bintang<br>${message}`;
+                feedback.prepend(feedbackItem);
+
+                // Save feedback to localStorage
+                storedFeedback.push({ name, message, rating });
+                localStorage.setItem('feedback', JSON.stringify(storedFeedback));
+
+                form.reset();
+                stars.forEach(s => s.classList.remove('selected'));
+                ratingInput.value = '0';
+                localStorage.removeItem('name');
+                localStorage.removeItem('message');
+                localStorage.removeItem('rating');
+            });
+
+            // Save form data to localStorage on input change
+            document.getElementById('name').addEventListener('input', function() {
+                localStorage.setItem('name', this.value);
+            });
+
+            document.getElementById('message').addEventListener('input', function() {
+                localStorage.setItem('message', this.value);
+            });
+
+            stars.forEach(star => {
+                star.addEventListener('click', function() {
+                    localStorage.setItem('rating', selectedRating);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
